@@ -25,7 +25,6 @@
       ws.onOpen(function() {
       });
       ws.onRecv(function(message) {
-        console.log(message);
         if (message.name == 'heartbeat') {
           $('#heartbeat').html(message.body);
         } else if (message.name == 'chat') {

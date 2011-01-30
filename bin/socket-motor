@@ -10,7 +10,7 @@ default_config = {
   
   :nodelets => {
     :ws_listener => {
-      :ws_in        => 'ws://127.0.0.1:8080',
+      :ws_in        => 'ws://0.0.0.0:8080',
       :broadcast_in => 'tcp://127.0.0.1:2200',
       :channels_in  => 'tcp://127.0.0.1:2205',
       :proxy_out    => 'tcp://127.0.0.1:2201',
