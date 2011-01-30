@@ -1,7 +1,10 @@
 require 'dripdrop'
 require 'logger'
+require 'hashie/mash'
 
 class SocketMotor < DripDrop::Node
+  attr_reader :options
+   
   @@logger = Logger.new(STDERR)
   @@logger.level = Logger::DEBUG
   def self.logger
@@ -11,23 +14,31 @@ class SocketMotor < DripDrop::Node
   def initialize
     super
     @run_list = :all
+    @options  = Hashie::Mash.new
   end
   
+  def configure(options={})
+    @options.merge! options
+  end
+
   def action
     nodelet :ws_listener, WSListener do |n|
-      n.route :websocket,    :websocket,     'ws://127.0.0.1:8080'
-      n.route :broadcast_in, :zmq_subscribe, 'tcp://127.0.0.1:2200', :connect
-      n.route :proxy_out,    :zmq_xreq,      'tcp://127.0.0.1:2201', :connect
+      o = options.nodelets.ws_listener
+      n.route :ws_in,        :websocket,     o.ws_in
+      n.route :broadcast_in, :zmq_subscribe, o.broadcast_in, :connect
+      n.route :proxy_out,    :zmq_xreq,      o.proxy_out,    :connect
     end
     
     nodelet :proxy_master, ProxyMaster do |n|
-      n.route :proxy_in,  :zmq_xrep,    'tcp://127.0.0.1:2201', :bind
-      n.route :proxy_out, :http_client, 'tcp://127.0.0.1:3000/endpoint'
+      o = options.nodelets.proxy_master
+      n.route :proxy_in,  :zmq_xrep,    o.proxy_in, :bind
+      n.route :proxy_out, :http_client, o.proxy_out
     end
   
     nodelet :broadcast_master, BroadcastMaster do |n|
-      n.route :broadcast_out, :zmq_publish, 'tcp://127.0.0.1:2200', :bind
-      n.route :broadcast_in,  :http_server, 'http://127.0.0.1:2203'
+      o = options.nodelets.broadcast_master
+      n.route :broadcast_out, :zmq_publish, o.broadcast_out, :bind
+      n.route :broadcast_in,  :http_server, o.broadcast_in
     end
     
     nodelets.each do |name,nlet|
