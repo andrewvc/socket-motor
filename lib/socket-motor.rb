@@ -4,12 +4,6 @@ require 'hashie/mash'
 
 class SocketMotor < DripDrop::Node
   attr_reader :options
-   
-  @@logger = Logger.new(STDERR)
-  @@logger.level = Logger::DEBUG
-  def self.logger
-    @@logger
-  end
 
   def initialize
     super
@@ -21,31 +15,48 @@ class SocketMotor < DripDrop::Node
     @options.merge! options
   end
 
+  def error_handler(e)
+    log_warn(e)
+  end
+
   def action
+    route :logger_broadcast, :zmq_publish, options.logger_broadcast, :connect
+     
     nodelet :ws_listener, WSListener do |n|
       o = options.nodelets.ws_listener
       n.route :ws_in,        :websocket,     o.ws_in
       n.route :broadcast_in, :zmq_subscribe, o.broadcast_in, :connect
+      n.route :channels_in,  :zmq_subscribe, o.channels_in,  :connect
       n.route :proxy_out,    :zmq_xreq,      o.proxy_out,    :connect
     end
+
+    nodelet :broadcast_master, BroadcastMaster do |n|
+      o = options.nodelets.broadcast_master
+      n.route :broadcast_out, :zmq_publish, o.broadcast_out, :bind
+      n.route :broadcast_in,  :http_server, o.broadcast_in
+    end   
     
+    nodelet :channel_master, ChannelMaster do |n|
+      o = options.nodelets.channel_master
+      n.route :channels_out, :zmq_publish, o.channels_out, :bind
+      n.route :channels_in,  :http_server, o.channels_in
+    end
+
     nodelet :proxy_master, ProxyMaster do |n|
       o = options.nodelets.proxy_master
       n.route :proxy_in,  :zmq_xrep,    o.proxy_in, :bind
       n.route :proxy_out, :http_client, o.proxy_out
     end
   
-    nodelet :broadcast_master, BroadcastMaster do |n|
-      o = options.nodelets.broadcast_master
-      n.route :broadcast_out, :zmq_publish, o.broadcast_out, :bind
-      n.route :broadcast_in,  :http_server, o.broadcast_in
+    nodelet :logger, LogReceiver do |n|
+      n.route :logger_in, :zmq_subscribe, options.nodelets.logger.logger_in, :bind
     end
     
     nodelets.each do |name,nlet|
       nlet.run if @run_list == :all || (@run_list.is_a?(Array) && @run_list[name])
     end
 
-    self.class.logger.info "Starting"
+    puts "Starting"
   end
 
   # :stopdoc:
@@ -98,6 +109,7 @@ class SocketMotor < DripDrop::Node
     search_me = ::File.expand_path(
         ::File.join(::File.dirname(fname), dir, '**', '*.rb'))
 
+    require "#{self.libpath}/socket-motor/log_broadcaster"
     Dir.glob(search_me).sort.each {|rb| require rb}
   end
 
@@ -105,3 +117,7 @@ end  # module SocketMotor
 
 SocketMotor.require_all_libs_relative_to(__FILE__)
 
+#This is ugly
+class SocketMotor
+  include LogBroadcaster
+end

@@ -6,19 +6,29 @@ require File.expand_path(
     File.join(File.dirname(__FILE__), %w[.. lib socket-motor]))
 
 default_config = {
+  :logger_broadcast => 'tcp://127.0.0.1:2204',
+  
   :nodelets => {
     :ws_listener => {
       :ws_in        => 'ws://127.0.0.1:8080',
       :broadcast_in => 'tcp://127.0.0.1:2200',
-      :proxy_out    => 'tcp://127.0.0.1:2201'
+      :channels_in  => 'tcp://127.0.0.1:2205',
+      :proxy_out    => 'tcp://127.0.0.1:2201',
     },
     :proxy_master => {
        :proxy_in  =>   'tcp://127.0.0.1:2201',
        :proxy_out => 'tcp://127.0.0.1:3000/proxy_point'
     },
+    :channel_master => {
+      :channels_out => 'tcp://127.0.0.1:2205',
+      :channels_in  => 'http://127.0.0.1:2206'
+    },
     :broadcast_master => {
       :broadcast_out => 'tcp://127.0.0.1:2200',
       :broadcast_in  => 'http://127.0.0.1:2203'
+    },
+    :logger => {
+      :logger_in  => 'tcp://127.0.0.1:2204'
     }
   }
 }
