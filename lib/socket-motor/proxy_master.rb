@@ -8,10 +8,10 @@ class SocketMotor
 
     def proxy_reqs
       proxy_in.on_recv do |message, response|
-        SocketMotor.log_debug "Proxying #{message.inspect} to htout"
+        log_debug "Proxying #{message.inspect} to htout"
          
         proxy_out.send_message(message) do |http_response|
-          SocketMotor.log_debug "Received http response #{http_response.inspect} sending back"
+          log_debug "Received http response #{http_response.inspect} sending back"
           response.send_message(http_response)
         end
       end

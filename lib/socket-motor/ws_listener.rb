@@ -22,13 +22,12 @@ class SocketMotor
 
       ws_in.on_open do |conn|
         log_debug "WS Connected"
-        conn.send_message(DripDrop::Message.new('test'))
         
+        log_debug "Subscribed"
         sid = @channel_all.subscribe do |message|
-          log_debug message.inspect
           conn.send_message(message)
         end
-         
+        
         sigs_sids[conn.signature] = sid
       end
       ws_in.on_close do |conn|
@@ -42,7 +41,7 @@ class SocketMotor
 
       ws_in.on_recv do |message,conn|
         log_debug "WS Recv #{message.name}"
-        @reqs_out.send_message(message) do |resp_message|
+        proxy_out.send_message(message) do |resp_message|
           log_debug "Recvd resp_message #{resp_message.inspect}, sending back to client"
           conn.send_message(resp_message)
         end
