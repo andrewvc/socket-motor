@@ -2,6 +2,8 @@ require 'dripdrop'
 require 'logger'
 require 'hashie/mash'
 
+Thread.abort_on_exception = true
+
 class SocketMotor < DripDrop::Node
   attr_reader :options
 
