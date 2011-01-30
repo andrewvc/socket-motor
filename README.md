@@ -1,7 +1,7 @@
 socket-motor
 ===========
 
-FIXME (describe your package)
+An async bridge between web sockets and HTTP
 
 Features
 --------
@@ -11,34 +11,31 @@ Features
 Examples
 --------
 
-    FIXME (code sample of usage)
 
 Requirements
 ------------
 
-* FIXME (list of requirements)
+rubinius or ruby1.9 (rbx preferred)
+drip drop gem
 
 Install
 -------
 
-* FIXME (sudo gem install, anything else)
+Install the binary libraries for libzmq.
+
+If you're on ruby 1.9, install the ffi gem, then install the dripdrop gem
 
 Author
 ------
 
-Original author: FIXME (author's name)
-
-Contributors:
-
-* FIXME (contributor 1?)
-* FIXME (contributor 2?)
+Original author: Andrew Cholakian
 
 License
 -------
 
-(The MIT License) FIXME (different license?)
+(The MIT License)
 
-Copyright (c) 2011 FIXME (author's name)
+Copyright (c) 2011
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
