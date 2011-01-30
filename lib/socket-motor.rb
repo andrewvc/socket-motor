@@ -1,6 +1,12 @@
 require 'dripdrop'
+require 'logger'
 
 class SocketMotor < DripDrop::Node
+  @@logger = Logger.new(STDERR)
+  @@logger.level = Logger::DEBUG
+  def self.logger
+    @@logger
+  end
 
   def initialize
     super
@@ -21,12 +27,14 @@ class SocketMotor < DripDrop::Node
   
     nodelet :broadcast_master, BroadcastMaster do |n|
       n.route :broadcast_out, :zmq_publish, 'tcp://127.0.0.1:2200', :bind
-      n.route :reqs_in,       :zmq_xrep,    'tcp://127.0.0.1:2201', :bind
+      n.route :broadcast_in,  :http_server, 'http://127.0.0.1:2203'
     end
     
     nodelets.each do |name,nlet|
       nlet.run if @run_list == :all || (@run_list.is_a?(Array) && @run_list[name])
     end
+
+    self.class.logger.info "Starting"
   end
 
   # :stopdoc:

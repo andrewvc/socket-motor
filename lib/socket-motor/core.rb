@@ -9,9 +9,10 @@ class SocketMotor
 
     def proxy_reqs
       proxy_in.on_recv do |message, response|
-        puts "Proxying #{message.inspect} to htout"
+        SocketMoter.logger.debug "Proxying #{message.inspect} to htout"
+         
         proxy_out.send_message(message) do |http_response|
-          puts "Received http response #{http_response.inspect} sending back"
+          SocketMoter.logger.debug "Received http response #{http_response.inspect} sending back"
           response.send_message(http_response)
         end
       end
@@ -20,12 +21,9 @@ class SocketMotor
 
   class BroadcastMaster < DripDrop::Node::Nodelet
     def run
-      heartbeat
-    end
-    
-    def heartbeat
-      EM::PeriodicTimer.new(1) do
-        broadcast_out.send_message :name => 'tick', :body => Time.now.to_s
+      broadcast_in.on_recv do |message,response|
+        broadcast_out.send_message(message)
+        response.send_message(:name => 'message_sent')
       end
     end
   end
@@ -41,7 +39,7 @@ class SocketMotor
     def setup_broadcast
       # Receives messages from Broadcast Out
       broadcast_in.on_recv do |message|
-        puts "Broadcast In recv: #{message.inspect}"
+        SocketMoter.logger.debug "Broadcast In recv: #{message.inspect}"
         @channel_all.push(message)
       end
     end
@@ -50,29 +48,29 @@ class SocketMotor
       sigs_sids = {} #Map connection signatures to subscriber IDs
        
       websocket.on_open do |conn|
-        puts "WS Connected"
+        SocketMoter.logger.debug "WS Connected"
         conn.send_message(DripDrop::Message.new('test'))
         
         sid = @channel_all.subscribe do |message|
-          puts message.inspect
+          SocketMoter.logger.debug message.inspect
           conn.send_message(message)
         end
          
         sigs_sids[conn.signature] = sid
       end
       websocket.on_close do |conn|
-        puts "Closed #{conn.signature}"
+        SocketMoter.logger.debug "Closed #{conn.signature}"
         @channel_all.unsubscribe sigs_sids[conn.signature]
       end
       websocket.on_error do |reason,conn|
-        puts "Errored #{reason.inspect}, #{conn.signature}"
+        SocketMoter.logger.warn "Errored #{reason.inspect}, #{conn.signature}"
         @channel_all.unsubscribe sigs_sids[conn.signature]
       end
 
       websocket.on_recv do |message,conn|
-        puts "WS Recv #{message.name}"
+        SocketMoter.logger.debug "WS Recv #{message.name}"
         @reqs_out.send_message(message) do |resp_message|
-          puts "Recvd resp_message #{resp_message.inspect}, sending back to client"
+          SocketMoter.logger.debug "Recvd resp_message #{resp_message.inspect}, sending back to client"
           conn.send_message(resp_message)
         end
       end
