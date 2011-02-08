@@ -17,15 +17,11 @@ default_config = {
     },
     :proxy_master => {
        :proxy_in  =>   'tcp://127.0.0.1:2201',
-       :proxy_out => 'tcp://127.0.0.1:4567/proxy_point'
+       :proxy_out => 'tcp://127.0.0.1:3000/chat_responder'
     },
     :channel_master => {
       :channels_out => 'tcp://127.0.0.1:2205',
       :channels_in  => 'http://127.0.0.1:2206'
-    },
-    :broadcast_master => {
-      :broadcast_out => 'tcp://127.0.0.1:2200',
-      :broadcast_in  => 'http://127.0.0.1:2203'
     },
     :logger => {
       :logger_in  => 'tcp://127.0.0.1:2204'

@@ -7,6 +7,10 @@ Thread.abort_on_exception = true
 class SocketMotor < DripDrop::Node
   attr_reader :options
 
+  def self.uuid
+    @uuid ||= SpectraUUID.create.to_s
+  end
+   
   def initialize
     super
     @run_list = :all
@@ -18,7 +22,14 @@ class SocketMotor < DripDrop::Node
   end
 
   def error_handler(e)
+    $stderr.write "SOCKET MOTOR ERROR"
+    $stderr.write e.message
+    $stderr.write e.backtrace.join("\t\n")
     log_warn(e)
+  end
+  
+  def uuid
+    self.class.uuid
   end
 
   def action
@@ -29,15 +40,9 @@ class SocketMotor < DripDrop::Node
       n.route :ws_in,        :websocket,     o.ws_in
       n.route :broadcast_in, :zmq_subscribe, o.broadcast_in, :connect
       n.route :channels_in,  :zmq_subscribe, o.channels_in,  :connect
-      n.route :proxy_out,    :zmq_xreq,      o.proxy_out,    :connect
+      n.route :proxy_out,    :zmq_xreq,      o.proxy_out,    :connect, :message_class => SocketMotor::ReqRepMessage
     end
 
-    nodelet :broadcast_master, BroadcastMaster do |n|
-      o = options.nodelets.broadcast_master
-      n.route :broadcast_out, :zmq_publish, o.broadcast_out, :bind
-      n.route :broadcast_in,  :http_server, o.broadcast_in
-    end   
-    
     nodelet :channel_master, ChannelMaster do |n|
       o = options.nodelets.channel_master
       n.route :channels_out, :zmq_publish, o.channels_out, :bind
@@ -46,8 +51,8 @@ class SocketMotor < DripDrop::Node
 
     nodelet :proxy_master, ProxyMaster do |n|
       o = options.nodelets.proxy_master
-      n.route :proxy_in,  :zmq_xrep,    o.proxy_in, :bind
-      n.route :proxy_out, :http_client, o.proxy_out
+      n.route :proxy_in,  :zmq_xrep,    o.proxy_in, :bind, :message_class => SocketMotor::ReqRepMessage
+      n.route :proxy_out, :http_client, o.proxy_out,       :message_class => SocketMotor::ReqRepMessage
     end
   
     nodelet :logger, LogReceiver do |n|
@@ -58,7 +63,7 @@ class SocketMotor < DripDrop::Node
       nlet.run if @run_list == :all || (@run_list.is_a?(Array) && @run_list[name])
     end
 
-    puts "Starting"
+    puts "Starting #{uuid}"
   end
 
   # :stopdoc:

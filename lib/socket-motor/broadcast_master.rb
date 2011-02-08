@@ -8,7 +8,7 @@ class SocketMotor
         response.send_message(:name => 'message_sent')
       end
 
-      EM::PeriodicTimer.new(5) do
+      EM::PeriodicTimer.new(20) do
         broadcast_out.send_message(:name => 'heartbeat', :body => Time.now.to_s)
       end
     end

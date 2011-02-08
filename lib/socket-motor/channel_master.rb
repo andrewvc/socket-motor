@@ -4,10 +4,8 @@ class SocketMotor
     include LogBroadcaster
     
     def run
-      @channels = {
-      }
-       
       channels_in.on_recv do |message,response|
+        log_debug "Recevied chan req"
         channels_out.send_message(message)
         
         response.send_message(:name => 'ack')
