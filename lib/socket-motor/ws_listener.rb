@@ -9,17 +9,8 @@ class SocketMotor
       @channels       = Hash.new {|h,k| h[k] = {:em_channel => EM::Channel.new, :connection_ids => {}}}
       @sigs_meta      = {} #Map connection_ids to metadata
        
-      setup_broadcast
       setup_channels
       setup_websockets
-    end
-
-    def setup_broadcast
-      # Receives messages from Broadcast Out
-      broadcast_in.on_recv do |message|
-        log_debug "Broadcast In recv: #{message.inspect}"
-        @channel_all.push(message)
-      end
     end
 
     def setup_channels
@@ -35,8 +26,12 @@ class SocketMotor
           case message.body[:operation]
           when 'subscribe'
             connection.subscribe(channel_name)
+            
+            log_debug "Subscribed '#{connection_id}' to '#{channel_name}'"
           when 'unsubscribe'
             connection.unsubscribe(channel_name)
+            
+            log_debug "Unsubscribed '#{connection_id}' to '#{channel_name}'"
           end
         when 'publish'
           message = message.body[:message]
@@ -88,8 +83,8 @@ class SocketMotor
          
         ws_conn = WSConnection.find_by_em_connection(conn)
         
-
-        req_message = SocketMotor::ReqRepMessage.from_hash(message.to_hash)
+        message_hash = message.to_hash.merge({'head' => {'message_class' => nil}})
+        req_message = SocketMotor::ReqRepMessage.from_hash(message_hash)
         req_message.connection_id = ws_conn.connection_id
          
         proxy_out.send_message(req_message) do |resp_message|
