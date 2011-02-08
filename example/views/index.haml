@@ -11,13 +11,13 @@
       }
 
     %script{:type => 'text/javascript', :src => 'https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js'}
-    %script{:type => 'text/javascript', :src => '/swf/swfobject.js'}
+    %script{:type => 'text/javascript', :src => '/js/swfobject.js'}
     %script{:type => 'text/javascript', :src => '/js/FABridge.js'}
     %script{:type => 'text/javascript', :src => '/js/web_socket.js'}
     %script{:type => 'text/javascript', :src => '/js/dripdrop.js'}
     :javascript
       // Set URL of your WebSocketMain.swf here:
-      WEB_SOCKET_SWF_LOCATION = "WebSocketMain.swf";
+      WEB_SOCKET_SWF_LOCATION = "/swf/WebSocketMain.swf";
       // Set this to dump debug message from Flash to console.log:
       WEB_SOCKET_DEBUG = true; 
       
@@ -39,7 +39,11 @@
       function sendChat() {
         var text = $('#chat-input').val();
         $('#chat-input').val('');
-        var msg  = new DD.Message('chat', {body: text});
+        var msg  = new DD.Message('chat', {body: {text: text}});
+        ws.sendMessage(msg);
+      }
+      function channelSubscribe(channelName) {
+        var msg = new DD.Message('channel_subscribe', {body: {channel_name: channelName}});
         ws.sendMessage(msg);
       }
   %body
@@ -51,7 +55,11 @@
       %input{:type => 'text', :id => 'chat-input'}
       %a{:href => '#', :onclick => 'sendChat(); false'} Send
 
+    %strong Channel Control:
+    %form{:onsubmit => 'channelSubscribe(); return false'}
+      %input{:type => 'text', :id => 'subscribe-input'}
+      %a{:href => '#', :onclick => 'channelSubscribe(); false'} Subscribe
+
     %div
       %strong Last Heartbeat Received
       %div{:id => 'heartbeat'}
-      
