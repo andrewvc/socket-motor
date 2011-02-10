@@ -18,6 +18,7 @@ class SocketMotor
         log_debug "Recevied channel message #{message.inspect}"
          
         channel_name   = message.body[:channel_name]
+        
         case message.name
         when 'control'
           connection_id  = message.body[:connection_id]
@@ -73,7 +74,7 @@ class SocketMotor
         log_debug "WS closed #{ws_conn.connection_id}"
       end
       ws_in.on_error do |reason,conn|
-        ws_conn = WSConnection.find_by_em_connection(conn).teardown
+        ws_conn = WSConnection.find_by_em_connection(conn)
         ws_conn.teardown
          
         log_debug "WS error #{ws_conn.connection_id}: #{reason.inspect}"

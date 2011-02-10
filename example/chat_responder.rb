@@ -18,7 +18,7 @@ class ChatResponder < SocketMotor::RackApp
  
     puts "Received chat message #{message.body}"
     
-#    CHAN_AGENT.publish('test', 'broadcasted BLAH BLAH')
+    CHAN_AGENT.publish('test', 'broadcasted BLAH BLAH')
     puts "Publishing to channel"
 
     # You must respond with either a SocketMotor::ReqRepMessage
@@ -29,9 +29,9 @@ class ChatResponder < SocketMotor::RackApp
 
   handle 'channel_subscribe' do |message|
     channel_name = message.body['channel_name']
-    puts "Subscribing to channel #{channel_name}"
+    puts "Subscribing to channel #{channel_name}. #{message.inspect}"
     begin
-      #CHAN_AGENT.subscribe(channel_name, message.connection_id)
+      CHAN_AGENT.subscribe(channel_name, message.connection_id)
     rescue StandardError => e
       puts e.message
       puts e.backtrace.join("\n")

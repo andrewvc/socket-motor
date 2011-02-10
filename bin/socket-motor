@@ -33,4 +33,4 @@ sm = SocketMotor.new
 
 sm.configure(default_config)
 
-sm.start!
+EM::run { sm.action }

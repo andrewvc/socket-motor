@@ -56,9 +56,9 @@
       %a{:href => '#', :onclick => 'sendChat(); false'} Send
 
     %strong Channel Control:
-    %form{:onsubmit => 'channelSubscribe(); return false'}
+    %form{:onsubmit => 'channelSubscribe($("#subscribe-input").val()); return false'}
       %input{:type => 'text', :id => 'subscribe-input'}
-      %a{:href => '#', :onclick => 'channelSubscribe(); false'} Subscribe
+      %a{:href => '#', :onclick => 'channelSubscribe($("#subscribe-input").val()); false'} Subscribe
 
     %div
       %strong Last Heartbeat Received
