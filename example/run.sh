@@ -1,1 +1,1 @@
-thin -C config.ru start
+thin -R config.ru start

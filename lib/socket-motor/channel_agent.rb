@@ -10,23 +10,19 @@ class SocketMotor
       route :channel_out, :http_client, @opts[:channel_address], :message_class => SocketMotor::ChannelMessage
     end
     
-    def publish(channel_name, message)
-      channel_out.send_message(SocketMotor::ChannelMessage.publish_message(channel_name, message)) do |resp_message|
-        puts resp_message
-      end
+    def publish(channel_name, payload)
+      message = SocketMotor::ChannelMessage::Publish.new(channel_name, payload)
+      channel_out.send_message(message)
     end
     
     def subscribe(channel_name, connection_id)
-      channel_out.send_message SocketMotor::ChannelMessage.subscribe_message(channel_name, connection_id) do |resp_message|
-        puts resp_message
-      end
-
+      message = SocketMotor::ChannelMessage::Control.new(channel_name, 'subscribe', connection_id)
+      channel_out.send_message(message)
     end
         
     def unsubscribe(channel_name, connection_id)
-      channel_out.send_message SocketMotor::ChannelMessage.publish_message(channel_name, connection_id) do |resp_message|
-        puts resp_message
-      end
+      message = SocketMotor::ChannelMessage::Control.new(channel_name, 'unsubscribe', connection_id)
+      channel_out.send_message(message)
     end
   end
 end

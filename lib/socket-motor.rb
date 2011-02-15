@@ -1,3 +1,4 @@
+require 'em-zeromq'
 require 'dripdrop'
 require 'logger'
 require 'hashie/mash'
@@ -38,15 +39,14 @@ class SocketMotor < DripDrop::Node
     nodelet :ws_listener, WSListener do |n|
       o = options.nodelets.ws_listener
       n.route :ws_in,        :websocket,     o.ws_in
-      n.route :broadcast_in, :zmq_subscribe, o.broadcast_in, :connect
-      n.route :channels_in,  :zmq_subscribe, o.channels_in,  :connect
+      n.route :channels_in,  :zmq_subscribe, o.channels_in,  :connect, :message_class => SocketMotor::ChannelMessage
       n.route :proxy_out,    :zmq_xreq,      o.proxy_out,    :connect, :message_class => SocketMotor::ReqRepMessage
     end
 
     nodelet :channel_master, ChannelMaster do |n|
       o = options.nodelets.channel_master
-      n.route :channels_out, :zmq_publish, o.channels_out, :bind
-      n.route :channels_in,  :http_server, o.channels_in
+      n.route :channels_out, :zmq_publish, o.channels_out, :bind, :message_class => SocketMotor::ChannelMessage
+      n.route :channels_in,  :http_server, o.channels_in,         :message_class => SocketMotor::ChannelMessage
     end
 
     nodelet :proxy_master, ProxyMaster do |n|

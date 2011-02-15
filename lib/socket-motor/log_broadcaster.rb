@@ -8,6 +8,8 @@ class SocketMotor
          
         message = new_message
       end
+
+      puts "#{self.class}: #{message}"
       
       logger_broadcast.send_message(
         :name => 'log', 

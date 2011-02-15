@@ -17,7 +17,7 @@ default_config = {
     },
     :proxy_master => {
        :proxy_in  =>   'tcp://127.0.0.1:2201',
-       :proxy_out => 'tcp://127.0.0.1:3000/chat_responder'
+       :proxy_out => 'tcp://127.0.0.1:9292/chat_responder'
     },
     :channel_master => {
       :channels_out => 'tcp://127.0.0.1:2205',

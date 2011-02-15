@@ -17,48 +17,29 @@ class SocketMotor
       channels_in.on_recv do |message|
         log_debug "Recevied channel message #{message.inspect}"
          
-        channel_name   = message.body[:channel_name]
-        
-        case message.name
-        when 'control'
-          connection_id  = message.body[:connection_id]
-          connection     = WSConnection.find_by_connection_id(connection_id)
+        case
+        when message.class == SocketMotor::ChannelMessage::Control
+          connection   = WSConnection.find_by_connection_id(message.connection_id)
+          channel_name = message.channel_name
            
-          case message.body[:operation]
+          case message.operation
           when 'subscribe'
             connection.subscribe(channel_name)
-            
-            log_debug "Subscribed '#{connection_id}' to '#{channel_name}'"
+             
+            log_debug "Subscribed '#{message.connection_id}' to '#{channel_name}'"
           when 'unsubscribe'
             connection.unsubscribe(channel_name)
             
-            log_debug "Unsubscribed '#{connection_id}' to '#{channel_name}'"
+            log_debug "Unsubscribed '#{message.connection_id}' to '#{channel_name}'"
+          else
+            log_warn "Unknown operation '#{message.operation}' in message #{message.inspect}"
           end
-        when 'publish'
-          message = message.body[:message]
-          WSConnection.publish_to_channel(channel_name, message)
-          
-          log_debug "Published '#{message}' to '#{channel_name}'"
+        when message.class == SocketMotor::ChannelMessage::Publish
+          WSChannel.find_by_name(message.channel_name).publish(message)
+        else
+          log_warn "Unkown channel message type for #{message.inspect}"
         end
       end
-    end
-
-   
-    def channel_unsubscribe(channel_name, signature)
-      unless channel_subscribed? channel_name, conn
-        log_warn "Cannot unsubscribe #{conn.signature} to channel #{channel_name}, not a subscriber"
-      end
-       
-      chan_meta @channels[channel_name]
-      sid = chan_meta[:connection_ids][connection_id(conn.signature)]
-      chan_meta[:em_channel].unsubscribe sid
-      
-      log_debug "Unsubscribed #{conn.signature} from #{channel_name}"
-      sid
-    end
-
-    def channel_subscribed?(channel_name, conn)
-      !!@channels[channel_name][:connection_ids][connection_id(conn.signature)]
     end
 
     def setup_websockets
@@ -73,11 +54,11 @@ class SocketMotor
          
         log_debug "WS closed #{ws_conn.connection_id}"
       end
-      ws_in.on_error do |reason,conn|
+      ws_in.on_error do |exception,conn|
         ws_conn = WSConnection.find_by_em_connection(conn)
         ws_conn.teardown
          
-        log_debug "WS error #{ws_conn.connection_id}: #{reason.inspect}"
+        log_debug "WS error #{ws_conn.connection_id}: #{exception.message}, #{exception.backtrace.join("\n")}"
       end
       ws_in.on_recv do |message,conn|
         log_debug "WS Recv #{message.name}"
