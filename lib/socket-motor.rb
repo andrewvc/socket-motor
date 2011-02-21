@@ -9,17 +9,17 @@ class SocketMotor < DripDrop::Node
   attr_reader :options
 
   def self.uuid
-    @uuid ||= SpectraUUID.create.to_s
+    @uuid ||= SpectraUUID.create_random.to_s
   end
    
-  def initialize
+  def initialize(*args)
     super
-    @run_list = :all
     @options  = Hashie::Mash.new
   end
-  
+ 
   def configure(options={})
     @options.merge! options
+    @run_list = @options[:run_list] if @options[:run_list]
   end
 
   def error_handler(e)
@@ -35,8 +35,9 @@ class SocketMotor < DripDrop::Node
 
   def action
     route :logger_broadcast, :zmq_publish, options.logger_broadcast, :connect
-     
+
     nodelet :ws_listener, WSListener do |n|
+      puts "WS INIT"
       o = options.nodelets.ws_listener
       n.route :ws_in,        :websocket,     o.ws_in
       n.route :channels_in,  :zmq_subscribe, o.channels_in,  :connect, :message_class => SocketMotor::ChannelMessage
@@ -45,22 +46,24 @@ class SocketMotor < DripDrop::Node
 
     nodelet :channel_master, ChannelMaster do |n|
       o = options.nodelets.channel_master
-      n.route :channels_out, :zmq_publish, o.channels_out, :bind, :message_class => SocketMotor::ChannelMessage
-      n.route :channels_in,  :http_server, o.channels_in,         :message_class => SocketMotor::ChannelMessage
+      n.route :channels_out, :zmq_publish,  o.channels_out, :bind, :message_class => SocketMotor::ChannelMessage
+      n.route :channels_in,  :zmq_subscribe, o.channels_in,  :bind, :message_class => SocketMotor::ChannelMessage
     end
 
     nodelet :proxy_master, ProxyMaster do |n|
       o = options.nodelets.proxy_master
-      n.route :proxy_in,  :zmq_xrep,    o.proxy_in, :bind, :message_class => SocketMotor::ReqRepMessage
-      n.route :proxy_out, :http_client, o.proxy_out,       :message_class => SocketMotor::ReqRepMessage
+      n.route :proxy_in,  :zmq_xrep, o.proxy_in,  :bind, :message_class => SocketMotor::ReqRepMessage
+      n.route :proxy_out, :zmq_xreq, o.proxy_out, :bind, :message_class => SocketMotor::ReqRepMessage
     end
   
     nodelet :logger, LogReceiver do |n|
       n.route :logger_in, :zmq_subscribe, options.nodelets.logger.logger_in, :bind
     end
     
+    puts "Available Nodelets: #{nodelets.inspect}"
     nodelets.each do |name,nlet|
-      nlet.run if @run_list == :all || (@run_list.is_a?(Array) && @run_list[name])
+      puts "Running nodelet: #{name}"
+      nlet.run
     end
 
     puts "Starting #{uuid}"

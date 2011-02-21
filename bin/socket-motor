@@ -16,8 +16,8 @@ default_config = {
       :proxy_out    => 'tcp://127.0.0.1:2201',
     },
     :proxy_master => {
-       :proxy_in  =>   'tcp://127.0.0.1:2201',
-       :proxy_out => 'tcp://127.0.0.1:9292/chat_responder'
+       :proxy_in  => 'tcp://127.0.0.1:2201',
+       :proxy_out => 'tcp://127.0.0.1:2202'
     },
     :channel_master => {
       :channels_out => 'tcp://127.0.0.1:2205',
@@ -29,8 +29,25 @@ default_config = {
   }
 }
 
-sm = SocketMotor.new
 
-sm.configure(default_config)
+if ARGV[0]
+  unless File.exists?(ARGV[0])
+    raise ArgumentError, "Configuration File, '#{ARGV[0]}' could not be found"
+  end
+   
+  puts "Using configuration file '#{ARGV[0]}'"
+  parsed = JSON.parse(File.open(ARGV[0]).read)
+  config = parsed
+  puts "Config: #{config.inspect}"
+else
+  config = default_config
+end
 
-EM::run { sm.action }
+config = Hashie::Mash.new(config)
+ 
+sm = SocketMotor.new config.node
+ 
+sm.configure(config)
+
+sm.start!
+ #EM::run { sm.action }

@@ -8,11 +8,11 @@ class SocketMotor
 
     def proxy_reqs
       proxy_in.on_recv do |message, response|
-        log_debug "Proxying #{message.inspect} to htout"
+        log_debug "Proxying #{message.inspect} to app"
          
-        proxy_out.send_message(message) do |http_response|
-          log_debug "Received http response #{http_response.inspect} sending back"
-          response.send_message(http_response)
+        proxy_out.send_message(message) do |app_response|
+          log_debug "Received app response #{app_response.inspect} sending back"
+          response.send_message(app_response)
         end
       end
     end

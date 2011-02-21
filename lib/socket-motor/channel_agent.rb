@@ -1,13 +1,9 @@
 require 'dripdrop'
 
 class SocketMotor
-  class ChannelAgent < DripDrop::Node
+  class ChannelAgent < DripDrop::Node::Nodelet
     def configure(opts={})
       @opts = opts
-    end
-     
-    def action
-      route :channel_out, :http_client, @opts[:channel_address], :message_class => SocketMotor::ChannelMessage
     end
     
     def publish(channel_name, payload)

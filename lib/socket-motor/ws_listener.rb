@@ -46,17 +46,29 @@ class SocketMotor
       ws_in.on_open do |conn|
         ws_conn = WSConnection.new(conn)
         
+        open_msg = SocketMotor::ReqRepMessage::Internal.new('socket_open')
+        open_msg.connection_id = ws_conn.connection_id
+        proxy_out.send_message(open_msg) {}
+         
         log_debug "WS connected #{ws_conn.connection_id}"
       end
       ws_in.on_close do |conn|
         ws_conn = WSConnection.find_by_em_connection(conn)
         ws_conn.teardown
+
+        close_msg = SocketMotor::ReqRepMessage::Internal.new('socket_close')
+        close_msg.connection_id = ws_conn.connection_id
+        proxy_out.send_message(close_msg) {}
          
         log_debug "WS closed #{ws_conn.connection_id}"
       end
       ws_in.on_error do |exception,conn|
         ws_conn = WSConnection.find_by_em_connection(conn)
         ws_conn.teardown
+
+        open_msg = SocketMotor::ReqRepMessage::Internal.new('socket_error')
+        proxy_out.send_message(open_msg) {}
+ 
          
         log_debug "WS error #{ws_conn.connection_id}: #{exception.message}, #{exception.backtrace.join("\n")}"
       end
@@ -64,11 +76,14 @@ class SocketMotor
         log_debug "WS Recv #{message.name}"
          
         ws_conn = WSConnection.find_by_em_connection(conn)
-        
-        message_hash = message.to_hash.merge({'head' => {'message_class' => nil}})
+
+        message_hash = message.to_hash
+        # Prevent forgery of class names
+        message_hash['head']['message_class'] = nil if message_hash['head']
         req_message = SocketMotor::ReqRepMessage.from_hash(message_hash)
         req_message.connection_id = ws_conn.connection_id
          
+        log_debug "Sending req message #{req_message.inspect}"
         proxy_out.send_message(req_message) do |resp_message|
           log_debug "Recvd resp_message #{resp_message.inspect}, sending back to client"
           
