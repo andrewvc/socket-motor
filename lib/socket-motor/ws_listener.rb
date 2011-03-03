@@ -31,6 +31,8 @@ class SocketMotor
             connection.unsubscribe(channel_name)
             
             log_debug "Unsubscribed '#{message.connection_id}' to '#{channel_name}'"
+          when 'kick'
+            connection.close
           else
             log_warn "Unknown operation '#{message.operation}' in message #{message.inspect}"
           end
@@ -63,14 +65,18 @@ class SocketMotor
         log_debug "WS closed #{ws_conn.connection_id}"
       end
       ws_in.on_error do |exception,conn|
-        ws_conn = WSConnection.find_by_em_connection(conn)
-        ws_conn.teardown
-
-        open_msg = SocketMotor::ReqRepMessage::Internal.new('socket_error')
-        proxy_out.send_message(open_msg) {}
- 
+        log_debug "WS error #{exception.message}, #{exception.backtrace.join("\n")}"
          
-        log_debug "WS error #{ws_conn.connection_id}: #{exception.message}, #{exception.backtrace.join("\n")}"
+        begin
+          ws_conn = WSConnection.find_by_em_connection(conn)
+          #ws_conn.teardown
+
+          err_msg = SocketMotor::ReqRepMessage::Internal.new('socket_error')
+          proxy_out.send_message(err_msg)
+        rescue Exception => e
+          $stderr.write e.message + "\n"
+          $stderr.write e.backtrace.join("\t\n")
+        end
       end
       ws_in.on_recv do |message,conn|
         log_debug "WS Recv #{message.name}"

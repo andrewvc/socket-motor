@@ -31,10 +31,9 @@ class SocketMotor
         @@connections[connection_id] = self
       end
        
-      # teardown, then close the connection
+      # teardown, then close the connection (teardown happens internally)
       def close
-        teardown
-        @ws_connection.close
+        @ws_connection.ws.close_connection
       end
       
       # Prep the socket for shutdown

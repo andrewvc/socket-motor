@@ -20,5 +20,10 @@ class SocketMotor
       message = SocketMotor::ChannelMessage::Control.new(channel_name, 'unsubscribe', connection_id)
       channel_out.send_message(message)
     end
+
+    def kick(channel_name, connection_id)
+      message = SocketMotor::ChannelMessage::Control.new(channel_name, 'kick', connection_id)
+      channel_out.send_message(message)
+    end
   end
 end
