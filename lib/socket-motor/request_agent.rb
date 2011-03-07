@@ -27,7 +27,7 @@ class SocketMotor
         before_filters.each { |f| f.call(message) }
          
         if    @handlers[message.name]
-          puts "Call #{message.name}"
+          puts "Call #{message.name} #{message.inspect}"
           resp_message = @handlers[message.name].call(message)
         elsif @handlers[message.class]
           resp_message = @handlers[message.class].call(message)

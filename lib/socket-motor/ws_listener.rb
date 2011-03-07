@@ -20,21 +20,25 @@ class SocketMotor
         case
         when message.class == SocketMotor::ChannelMessage::Control
           connection   = WSConnection.find_by_connection_id(message.connection_id)
-          channel_name = message.channel_name
-           
-          case message.operation
-          when 'subscribe'
-            connection.subscribe(channel_name)
-             
-            log_debug "Subscribed '#{message.connection_id}' to '#{channel_name}'"
-          when 'unsubscribe'
-            connection.unsubscribe(channel_name)
-            
-            log_debug "Unsubscribed '#{message.connection_id}' to '#{channel_name}'"
-          when 'kick'
-            connection.close
+          unless connection
+            log_warn "Could not find connection '#{message.connection_id}'"
           else
-            log_warn "Unknown operation '#{message.operation}' in message #{message.inspect}"
+            channel_name = message.channel_name
+             
+            case message.operation
+            when 'subscribe'
+              connection.subscribe(channel_name)
+               
+              log_debug "Subscribed '#{message.connection_id}' to '#{channel_name}'"
+            when 'unsubscribe'
+              connection.unsubscribe(channel_name)
+              
+              log_debug "Unsubscribed '#{message.connection_id}' to '#{channel_name}'"
+            when 'kick'
+              connection.close
+            else
+              log_warn "Unknown operation '#{message.operation}' in message #{message.inspect}"
+            end
           end
         when message.class == SocketMotor::ChannelMessage::Publish
           WSChannel.find_by_name(message.channel_name).publish(message)
